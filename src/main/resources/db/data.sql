@@ -1,0 +1,2 @@
+INSERT INTO users(email, name, password, roles) VALUES ('holita@gmail.com', 'admin1', '$2a$12$k8J.LRiyIVY9cWiVXWG3xOrDrxCZyNxppjQS99Ew5BRSo8QKAjLze', 'ROLE_ADMIN');
+INSERT INTO users(email, name, password, roles) VALUES ('hola@gmail.com', 'player1', '$2a$12$jExPzKwt6E656bpZ0taMQ.w9jsteUbbDZ9wOLqTeIXvRLy4SNIfc.', 'ROLE_USER');
