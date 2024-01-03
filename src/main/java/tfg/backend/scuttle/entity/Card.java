@@ -31,5 +31,9 @@ public class Card extends BaseEntity{
     private boolean isTreasure;
 
     private boolean isDestroyed;
+
+    private boolean isChosen;
+
+    private boolean isRevealed;
     
 }

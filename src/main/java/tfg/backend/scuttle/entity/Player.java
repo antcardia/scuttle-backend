@@ -33,6 +33,9 @@ public class Player extends BaseEntity{
     @OneToMany
     private List<Card> hand;
 
+    @OneToMany
+    private List<Card> playedCards;
+
     @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
     private List<Player> friends;
     
