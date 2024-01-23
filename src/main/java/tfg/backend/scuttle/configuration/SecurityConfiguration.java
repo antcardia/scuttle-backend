@@ -64,6 +64,10 @@ public class SecurityConfiguration {
 				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/logout")).permitAll()
 				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/register")).permitAll()
 				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/home")).authenticated()
+				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/select")).authenticated()
+				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/join-game")).authenticated()
+				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/new-game")).authenticated()
+				.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/game/**")).authenticated()
 				.requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
 				.anyRequest().authenticated());
 		http.headers(headers -> headers.frameOptions(t -> t.disable()));

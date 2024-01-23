@@ -16,8 +16,6 @@ public class Card extends BaseEntity{
     @Column(name = "card_value")
     private String value;
 
-    private String image;
-
     private String name;
 
     private String description;
@@ -35,5 +33,13 @@ public class Card extends BaseEntity{
     private boolean isChosen;
 
     private boolean isRevealed;
+
+    private boolean isPlayedAsPermanent;
+
+    private boolean isUpdatedPirateCode;
+
+    private boolean isUpdatedFirstMate;
+    
+    private boolean isUpdatedPirateKing;
     
 }

@@ -8,4 +8,5 @@ import tfg.backend.scuttle.entity.Card;
 @Repository
 public interface CardRepository extends JpaRepository<Card, Integer>{
     
+    Card findByName(String name);
 }

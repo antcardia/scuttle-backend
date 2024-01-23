@@ -16,4 +16,8 @@ public class PlayerService {
         playerRepository.save(player);
     }
 
+    public Player findByUserId(Integer id) {
+        return playerRepository.findByUserId(id);
+    }
+
 }
