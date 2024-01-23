@@ -15,11 +15,17 @@ public class CardService {
     private CardRepository cardRepository;
 
     public List<Card> getCards() {
-        return cardRepository.findAll().stream().filter(card -> card.getName() != "Davy Jones" && card.getName() != "Robot Pirate").toList();
+        Card davyJones = cardRepository.findByName("DavyJones");
+        Card robotPirate = cardRepository.findByName("RobotPirate");
+        return cardRepository.findAll().stream().filter(card -> !card.equals(davyJones) && !card.equals(robotPirate)).toList();
     }
 
     public List<Card> getSoloCards() {
         return cardRepository.findAll();
+    }
+
+    public Card findByName(String name) {
+        return cardRepository.findByName(name);
     }
 
     public void save(Card card) {
