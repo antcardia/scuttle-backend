@@ -7,9 +7,9 @@ INSERT INTO users(email, name, password, roles) VALUES
 ('test5@test.com', 'player5', '$2a$10$Gsic7B3Si21dACLSoIupy.QdYyDxAABc8PZaE2KIZrU77h7Zhhwxq', 'ROLE_USER');
 
 INSERT INTO games(round, turn, num_players, host, mode, time, is_active) VALUES
-(2, 'player5', 2, 'player2', 0, 3, false),
-(3, 'Robot Pirate', 1, 'player4', 1, 5, false),
-(1, 'player3', 2, 'player1', 2, 4, false);
+(2, 'player5', 2, 'player2', 0, '03:24', false),
+(3, 'Robot Pirate', 1, 'player4', 1, '05:49', false),
+(1, 'player3', 2, 'player1', 2, '04:31', false);
 
 INSERT INTO players(points, user_id, is_host, is_in_game, game_id) VALUES
 (0, 2, false, false, 3),

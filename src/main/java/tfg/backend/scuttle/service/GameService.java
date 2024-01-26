@@ -1,5 +1,6 @@
 package tfg.backend.scuttle.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,16 @@ public class GameService {
 
     public void save(Game game) {
         gameRepository.save(game);
+    }
+
+    public void delete(Game game) {
+        game.setDeck(new ArrayList<>());
+        game.setDiscardDeck(new ArrayList<>());
+        game.setHost(null);
+        game.setActive(false);
+        game.setTime("invalid");
+        game.setPlayers(new ArrayList<>());
+        save(game);
     }
     
 }

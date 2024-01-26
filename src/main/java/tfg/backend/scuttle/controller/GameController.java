@@ -1,5 +1,7 @@
 package tfg.backend.scuttle.controller;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +49,8 @@ public class GameController {
 
     private boolean turnChanged;
 
+    private LocalDateTime startTime;
+
     @GetMapping("/select")
     public ResponseEntity<List<GameMode>> select() {
         List<GameMode> gamemodes = gameService.getGameModes();
@@ -55,7 +59,7 @@ public class GameController {
 
     @GetMapping("/join-game")
     public ResponseEntity<List<Game>> getJoinableGames() {
-        return ResponseEntity.ok(gameService.findAll().stream().filter(game->!game.isActive() && game.getTime().equals(0)).toList());
+        return ResponseEntity.ok(gameService.findAll().stream().filter(game->!game.isActive() && game.getTime().equals("00:00")).toList());
     }
 
     @PostMapping("/new-game")
@@ -71,11 +75,33 @@ public class GameController {
         playerService.save(player);
         game.setHost(userDetails.getUsername());
         game.setPlayers(List.of(player));
-        game.setTime(0);
+        game.setTime("00:00");
         gameService.save(game);
         player.setGame(game);
+        player.setInGame(true);
         playerService.save(player);
         return ResponseEntity.ok(game.getId());
+    }
+
+    @PostMapping("/game/{id}/back")
+    public ResponseEntity<String> back(@PathVariable("id") Long id) {
+        Game game = gameService.findById(id);
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Player player = playerService.findByUserId(userService.findByName(userDetails.getUsername()).getId());
+        if(player.getUser().getName().equals(game.getHost())) {
+            player.setGame(null);
+            player.setHost(false);
+            player.setInGame(false);
+            playerService.save(player);
+            gameService.delete(game);
+            return ResponseEntity.ok("Game deleted");
+        }
+        player.setInGame(false);
+        player.setGame(null);
+        playerService.save(player);
+        game.getPlayers().remove(player);
+        gameService.save(game);
+        return ResponseEntity.ok("Player removed");
     }
 
     @PostMapping("/join-game/{id}")
@@ -83,7 +109,7 @@ public class GameController {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Player player = playerService.findByUserId(userService.findByName(userDetails.getUsername()).getId());
         Game game = gameService.findById(id);
-        if(game.getPlayers().size() < game.getNumPlayers()) {
+        if(game.getPlayers().size() < game.getNumPlayers() && game.getPlayers().size() > 0) {
             game.getPlayers().add(player);
             gameService.save(game);
             player.setInGame(true);
@@ -122,7 +148,6 @@ public class GameController {
                 cards.removeAll(cardsToAssign);
                 playerService.save(player);
             }
-
             game.setDeck(cards);
             Player pTurn = players.get(random.nextInt(players.size()));
             game.setTurn(pTurn.getUser().getName());
@@ -130,6 +155,7 @@ public class GameController {
             game.getPlayers().add(0, pTurn);
             game.setRound(1);
             game.setActive(true);
+            startTime = LocalDateTime.now();
             gameService.save(game);
             return ResponseEntity.ok(p);
         } else {
@@ -148,7 +174,11 @@ public class GameController {
     @GetMapping("/game/{id}/players")
     public ResponseEntity<List<Player>> getPlayers(@PathVariable("id") Long id) {
         Game game = gameService.findById(id);
-        return ResponseEntity.ok(game.getPlayers());
+        Integer numPlayers = game.getPlayers().size();
+        if(numPlayers == game.getNumPlayers()) {
+            return ResponseEntity.ok(game.getPlayers());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
     }
 
     @GetMapping("/game/{id}")
@@ -292,9 +322,57 @@ public class GameController {
         return null;
     }
 
-    @PostMapping("/game/{id}/end")
-    public ResponseEntity<String> endGame(@PathVariable("id") Long id, @RequestBody Game game) {
+    @GetMapping("/game/{id}/end-game")
+    public ResponseEntity<Boolean> checkEndGame(@PathVariable("id") Long id) {
+        boolean res = false;
+        Game game = gameService.findById(id);
+        for(Player player : game.getPlayers()) {
+            if(player.getPoints() >= 21) {
+                res = true;
+            }
+        }
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/game/{id}/end-game")
+    public ResponseEntity<String> endGame(@PathVariable("id") Long id) {
+        Game game = gameService.findById(id);
+        game.setActive(false);
+        game.setDeck(new ArrayList<>());
+        game.setDiscardDeck(new ArrayList<>());
+        LocalDateTime endTime = LocalDateTime.now();
+        Duration duration = Duration.between(startTime, endTime);
+        long minutes = duration.toMinutes();
+        long seconds = duration.minusMinutes(minutes).getSeconds();
+        String timeFormatted = String.format("%02d:%02d", minutes, seconds);
+        game.setTime(timeFormatted);
         gameService.save(game);
-        return ResponseEntity.ok("Game ended");
+        String playerName = game.getPlayers().stream().filter(player->player.getPoints() >= 21).findFirst().get().getUser().getName();
+        return ResponseEntity.ok(playerName);
+    }
+
+    @PostMapping("/game/{id}/leave-game")
+    public ResponseEntity<String> leaveGame(@PathVariable("id") Long id) {
+        Game game = gameService.findById(id);
+        for(Player player: new ArrayList<>(game.getPlayers())) {
+            player.setPoints(0);
+            playerService.save(player);
+        }
+        return ResponseEntity.ok("Game left");
+    }
+
+    @PostMapping("/game/{id}/finish-game")
+    public ResponseEntity<String> finishGame(@PathVariable("id") Long id){
+        Game game = gameService.findById(id);
+        for (Player player : new ArrayList<>(game.getPlayers())) {
+            player.setGame(null);
+            player.setHand(new ArrayList<>());
+            player.setPlayedCards(new ArrayList<>());
+            player.setHost(false);
+            player.setInGame(false);
+            playerService.save(player);
+            gameService.delete(game);
+        };
+        return ResponseEntity.ok("Game finished");
     }
 }
