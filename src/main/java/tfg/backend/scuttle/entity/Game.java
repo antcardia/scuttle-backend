@@ -30,7 +30,7 @@ public class Game extends BaseEntity{
 
     private GameMode mode;
 
-    private Integer time;
+    private String time;
 
     private boolean isActive;
 
