@@ -20,6 +20,10 @@ public class UserService implements UserDetailsService {
 	@Autowired
 	private PasswordEncoder encoder;
 
+	public User findByName(String name) {
+		return repository.findByName(name).get();
+	}
+
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 

@@ -1,10 +1,11 @@
 package tfg.backend.scuttle.controller;
 
 import tfg.backend.scuttle.entity.Authorities;
+import tfg.backend.scuttle.entity.Player;
 import tfg.backend.scuttle.entity.User;
 import tfg.backend.scuttle.service.AuthoritiesService;
 import tfg.backend.scuttle.service.JwtService;
-
+import tfg.backend.scuttle.service.PlayerService;
 import tfg.backend.scuttle.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class UserController {
 	private UserService service;
 
 	@Autowired
+	private PlayerService playerService;
+
+	@Autowired
 	private JwtService jwtService;
 
 	@Autowired
@@ -41,6 +45,15 @@ public class UserController {
 
 	@Autowired
 	private PasswordEncoder encoder;
+
+	@GetMapping("/user")
+	@PreAuthorize("hasAuthority('ROLE_USER') || hasAuthority('ROLE_ADMIN')")
+	public ResponseEntity<UserDetails> user(HttpServletRequest request) {
+		UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = userDetails.getUsername();
+		UserDetails user = service.loadUserByUsername(username);
+		return ResponseEntity.ok(user);
+	}
 
 	@GetMapping("/home")
 	public ResponseEntity<String> home(HttpServletRequest request) {
@@ -84,6 +97,11 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
 		}
 		service.addUser(user);
+		Player player = new Player();
+		player.setUser(user);
+		player.setPoints(0);
+		player.setInGame(false);
+		playerService.save(player);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
