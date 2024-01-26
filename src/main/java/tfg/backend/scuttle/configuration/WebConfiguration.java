@@ -20,10 +20,7 @@ public class WebConfiguration {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList(
-            "127.0.0.1:5173",
-            "scuttle.vercel.app"
-        ));
+        config.addAllowedOrigin("127.0.0.1:5173");
         config.setAllowedHeaders(Arrays.asList(
             HttpHeaders.AUTHORIZATION,
             HttpHeaders.CONTENT_TYPE,
