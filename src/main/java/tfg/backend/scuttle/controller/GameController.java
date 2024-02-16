@@ -45,6 +45,9 @@ public class GameController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private CardController cardController;
+
     private Integer numDraws;
 
     private boolean turnChanged;
@@ -145,6 +148,7 @@ public class GameController {
                 int numCardsToAssign = Math.min(5, cards.size());
                 List<Card> cardsToAssign = new ArrayList<>(cards.subList(0, numCardsToAssign));
                 player.setHand(cardsToAssign);
+                player.setPlayedCards(new ArrayList<>());
                 cards.removeAll(cardsToAssign);
                 playerService.save(player);
             }
@@ -197,17 +201,8 @@ public class GameController {
             return ResponseEntity.ok("Turn changed");
         }
         game.setTurn(game.getPlayers().get(game.getPlayers().indexOf(player)+1).getUser().getName());
-        this.turnChanged = true;
         gameService.save(game);
         return ResponseEntity.ok("Turn changed");
-    }
-
-    public boolean isTurnChanged() {
-        return turnChanged;
-    }
-
-    public void setTurnChanged(boolean turnChanged) {
-        this.turnChanged = turnChanged;
     }
 
     public Integer getNumDraws() {
@@ -276,6 +271,7 @@ public class GameController {
                 playerService.save(player);
             }
         }
+        cardController.stowawayCheck(id);
         nextTurn(game);
         return ResponseEntity.ok("Card played");
     }

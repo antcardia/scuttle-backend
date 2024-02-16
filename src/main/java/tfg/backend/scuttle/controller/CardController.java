@@ -241,7 +241,7 @@ public class CardController {
                     if (!c.isProtected()) {
                         player.setPoints(player.getPoints() - Integer.parseInt(c.getValue()));
                         playerService.save(player);
-                        c.setValue(c.getValue() + '-');
+                        c.setValue(c.getValue() + '.');
                         c.setDestroyed(true);
                         cardService.save(c);
                     }
@@ -258,7 +258,7 @@ public class CardController {
         Game game = gameService.findById(id);
         Player player = gameController.getPlayerTurn(game);
         Card noValueCard = player.getPlayedCards().stream()
-                .filter(c -> c.getValue().endsWith("-"))
+                .filter(c -> c.getValue().endsWith("."))
                 .findFirst()
                 .orElse(null);
         Card stowaway = player.getPlayedCards().stream()
@@ -267,8 +267,8 @@ public class CardController {
                 .orElse(null);
         if(noValueCard != null && stowaway != null){
             for (Card card : player.getPlayedCards()){
-                if (card.isTreasure() && !card.getValue().endsWith("-") && Integer.parseInt(card.getValue()) < Integer.parseInt(noValueCard.getValue().substring(0, noValueCard.getValue().length() - 1))){
-                    card.setValue(card.getValue() + '-');
+                if (card.isTreasure() && !card.getValue().endsWith(".") && Integer.parseInt(card.getValue()) < Integer.parseInt(noValueCard.getValue().substring(0, noValueCard.getValue().length() - 1))){
+                    card.setValue(card.getValue() + '.');
                     cardService.save(card);
                     noValueCard.setValue(noValueCard.getValue().substring(0, noValueCard.getValue().length() - 1));
                     cardService.save(noValueCard);
@@ -300,7 +300,7 @@ public class CardController {
                         if (!c.isProtected()) {
                             p.setPoints(p.getPoints() - Integer.parseInt(c.getValue()));
                             playerService.save(p);
-                            c.setValue(c.getValue() + '-');
+                            c.setValue(c.getValue() + '.');
                             c.setDestroyed(true);
                             cardService.save(c);
                         }
@@ -347,14 +347,14 @@ public class CardController {
             player.setPoints(0);
             playerService.save(player);
             for (Card card : new ArrayList<>(player.getPlayedCards())) {
-                if (!card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent() && Integer.parseInt(card.getValue()) <= number) {
+                if (!card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent() && Double.parseDouble(card.getValue()) <= number) {
                     card.setDestroyed(true);
                     cardService.save(card);
                     cardsToRemove.add(card);
                     game.getDiscardDeck().add(card);
                     gameService.save(game);
-                } else if ((!card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent() && Integer.parseInt(card.getValue()) > number) || (card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent())) {
-                    player.setPoints(player.getPoints() + Integer.parseInt(card.getValue()));
+                } else if ((!card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent() && Double.parseDouble(card.getValue()) > number) || (card.isProtected() && card.isTreasure() && !card.isPlayedAsPermanent())) {
+                    player.setPoints((int) (player.getPoints() + Double.parseDouble(card.getValue())));
                     playerService.save(player);
                 }
             }
@@ -371,11 +371,11 @@ public class CardController {
         List<Card> cardsToRemove = new ArrayList<>();
         for (Player player : new ArrayList<>(game.getPlayers())) {
             for (Card card : new ArrayList<>(player.getPlayedCards())) {
-                if (!card.isProtected() && card.isTreasure() && Integer.parseInt(card.getValue()) % 2 == 0) {
+                if (!card.isProtected() && card.isTreasure() && Double.parseDouble(card.getValue()) % 2 == 0) {
                     if(player.getPoints()<=0){
                         player.setPoints(0);
                     }else{
-                        player.setPoints(player.getPoints() - Integer.parseInt(card.getValue()));
+                        player.setPoints((int) (player.getPoints() - Double.parseDouble(card.getValue())));
                     }
                     playerService.save(player);
                     card.setDestroyed(true);
@@ -389,7 +389,7 @@ public class CardController {
             playerService.save(player);
             cardsToRemove.clear();
             for (Card card: new ArrayList<>(player.getHand())) {
-                if (!card.isProtected() && card.isTreasure() && Integer.parseInt(card.getValue()) % 2 != 0) {
+                if (!card.isProtected() && card.isTreasure() && Double.parseDouble(card.getValue()) % 2 != 0) {
                     cardsToRemove.add(card);
                     game.getDiscardDeck().add(card);
                     gameService.save(game);
@@ -477,14 +477,13 @@ public class CardController {
     }
 
     @GetMapping("/game/{id}/jolly-roger")
-    public ResponseEntity<Boolean> jollyRoger(@PathVariable("id") Long id) {
+    public ResponseEntity<String> jollyRoger(@PathVariable("id") Long id) {
         Game game = gameService.findById(id);
         Player player = gameController.getPlayerTurn(game);
-        if(player.getPlayedCards().stream().anyMatch(c -> c.getName().equals("JollyRoger") && c.isPlayedAsPermanent()) && gameController.isTurnChanged()){
-            gameController.setTurnChanged(false);
-            return ResponseEntity.ok(true);
+        if(player.getPlayedCards().stream().anyMatch(c -> c.getName().equals("JollyRoger") && c.isPlayedAsPermanent())){
+            return ResponseEntity.ok(player.getUser().getName());
         }else{
-            return ResponseEntity.ok(false);
+            return ResponseEntity.ok("");
         }
     }
 
@@ -788,9 +787,13 @@ public class CardController {
 
     @PostMapping("/game/{id}/chosen-card-pirate-code")
     public ResponseEntity<String> chosenCardPirateCode(@PathVariable("id") Long id,
-            @RequestBody Map<String, Card> requestBody) {
+            @RequestBody Map<String, String> requestBody) {
         Game game = gameService.findById(id);
-        Card card = requestBody.get("card");
+        String cardName = requestBody.get("card");
+        Card card = cardService.getCards().stream()
+                .filter(c -> c.getName().equals(cardName))
+                .findFirst()
+                .orElse(null);
         if (card.isTreasure() && !card.isPlayedAsPermanent()) {
             card.setProtected(true);
             card.setUpdatedPirateCode(true);
@@ -827,15 +830,6 @@ public class CardController {
                         card.setUpdatedPirateCode(false);
                         cardService.save(card);
                         return ResponseEntity.ok("Card unprotected " + card.getName());
-                    }
-                }
-            }else if((pirateCodeEyepatch != null && pirateCodeEyepatch.isPlayedAsPermanent()) || (pirateCodeSkull != null && pirateCodeSkull.isPlayedAsPermanent()) || (pirateCodeHook != null && pirateCodeHook.isPlayedAsPermanent())){
-                for (Card card : new ArrayList<>(player.getPlayedCards())) {
-                    if (card.isTreasure() && !card.isPlayedAsPermanent() && !card.isUpdatedPirateCode()) {
-                        card.setProtected(true);
-                        card.setUpdatedPirateCode(true);
-                        cardService.save(card);
-                        return ResponseEntity.ok("Card protected " + card.getName());
                     }
                 }
             }
@@ -880,6 +874,7 @@ public class CardController {
         p.getPlayedCards().add(card);
         p.setPoints(p.getPoints() + Integer.parseInt(card.getValue()));
         playerService.save(p);
+        stowawayCheck(id);
         gameController.nextTurn(game);
         return ResponseEntity.ok("Card stolen");
     }
